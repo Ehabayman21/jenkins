@@ -4,26 +4,24 @@ pipeline {
     stages {
         stage('Clone Code') {
             steps {
-                // سحب الكود من مستودعك
+                // سحب الكود من فرع main كما هو ظاهر في صورك
                 git branch: 'main', url: 'https://github.com/Ehabayman21/jenkins.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "Building the image..."
-                // بناء الصورة باسم php-app
+                // بناء الصورة بناءً على الـ Dockerfile
                 sh 'docker build -t php-app .'
             }
         }
 
-        stage('Run Container') {
+        stage('Run & Deploy') {
             steps {
-                echo "Running the container on port 8070..."
-                // حذف الحاوية القديمة إذا كانت موجودة لتجنب الخطأ
+                // تنظيف أي حاوية قديمة بنفس الاسم لتجنب تكرار الاسم
                 sh 'docker stop php-app || true'
                 sh 'docker rm php-app || true'
-                // تشغيل الحاوية الجديدة على بورت 8070
+                // التشغيل على بورت 8070 لتجنب بورت جينكينز 8080
                 sh 'docker run -d -p 8070:80 --name php-app php-app'
             }
         }
@@ -31,10 +29,7 @@ pipeline {
 
     post {
         success {
-            echo "Congratulations! Access your app at http://localhost:8070"
-        }
-        failure {
-            echo "Pipeline failed. Check the console output for errors."
+            echo "Congratulations! Application is running at http://localhost:8070"
         }
     }
 }
