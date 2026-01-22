@@ -2,31 +2,31 @@ pipeline {
     agent any
 
     stages {
-        stage('Build Docker Image') {
+        stage('Build Image') {
             steps {
-                echo "Building Docker image..."
-                // بناء الصورة
                 sh 'docker build -t php-app .'
             }
         }
 
-        stage('Run Container') {
+        stage('Test') {
             steps {
-                echo "Deploying container on port 8070..."
-                // حذف الحاوية القديمة قسرياً إذا كانت موجودة لتجنب تعارض الأسماء
-                sh 'docker rm -f php-app || true'
-                // تشغيل الحاوية الجديدة على بورت 8070
-                sh 'docker run -d -p 8070:80 --name php-app php-app'
+                echo "Testing if the container starts correctly..."
+                sh 'docker run -d --name test-container -p 8085:80 php-app'
+                // ننتظر ثواني للتأكد أن Apache بدأ العمل
+                sleep 5
+                // نختبر إذا كان السيرفر يرد بـ HTTP 200 (ناجح)
+                sh 'curl -s --head  http://localhost:8085 | grep "200 OK"' 
+                echo "Test Passed! ✅"
+                // نحذف حاوية الاختبار
+                sh 'docker rm -f test-container'
             }
         }
-    }
 
-    post {
-        success {
-            echo "Success! Access your app at http://localhost:8070"
-        }
-        failure {
-            echo "Something went wrong ❌"
+        stage('Deploy') {
+            steps {
+                sh 'docker rm -f php-app || true'
+                sh 'docker run -d -p 8070:80 --name php-app php-app'
+            }
         }
     }
 }
